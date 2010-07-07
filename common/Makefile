@@ -1,0 +1,24 @@
+CC=gcc
+CXX=g++
+CFLAGES= -g3 -Wno-deprecated
+INCDIR= -I../include/\
+	-I../include/common
+LIBS= 
+SRC=$(shell ls *.cpp)
+OBJ=$(SRC:.cpp=.o)
+COMLIB=libcommon.so
+all:clean $(COMLIB)
+$(COMLIB):$(OBJ)
+	$(CXX) $(CFLAGES) $(INCDIR) -shared -o $(COMLIB) $^ $(LIBS)
+	@cp -f *.so ../lib
+%.o:%.cpp
+	$(CXX) $(CFLAGES) $(INCDIR) -c $< -o $@ $(LIBS) 
+%.o:%.cc
+	$(CXX) $(CFLAGES) -c $< -o $@ $(LIBS) 
+%.o:%.c
+	$(CC) $(CFLAGES) -c $< -o $@ $(LIBS)
+clean:
+	@ rm -rf *.o	
+	@ rm -rf *.so
+	@ rm -f ../lib/$(COMLIB)
+	@ rm -f $(COMLIB)
