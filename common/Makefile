@@ -6,11 +6,11 @@ INCDIR= -I../include/\
 LIBS= 
 SRC=$(shell ls *.cpp)
 OBJ=$(SRC:.cpp=.o)
-COMLIB=libcommon.so
-all:clean $(COMLIB)
-$(COMLIB):$(OBJ)
-	$(CXX) $(CFLAGES) $(INCDIR) -shared -o $(COMLIB) $^ $(LIBS)
-	@cp -f *.so ../lib
+LIBOUTPUT=libcommon.so
+all:clean $(LIBOUTPUT)
+$(LIBOUTPUT):$(OBJ)
+	$(CXX) $(CFLAGES) $(INCDIR) -shared -o $(LIBOUTPUT) $^ $(LIBS)
+	@cp -f *.so ../lib/
 %.o:%.cpp
 	$(CXX) $(CFLAGES) $(INCDIR) -c $< -o $@ $(LIBS) 
 %.o:%.cc
@@ -20,5 +20,5 @@ $(COMLIB):$(OBJ)
 clean:
 	@ rm -rf *.o	
 	@ rm -rf *.so
-	@ rm -f ../lib/$(COMLIB)
-	@ rm -f $(COMLIB)
+	@ rm -f ../lib/$(LIBOUTPUT)
+	@ rm -f $(LIBOUTPUT)
