@@ -1,15 +1,15 @@
 CC=gcc
 CXX=g++
-CFLAGES= -g3 -Wno-deprecated
+CFLAGES= -g3 -Wno-deprecated -fPIC
 INCDIR= -I../include/\
 	-I../include/common
 LIBS= 
 SRC=$(shell ls *.cpp)
 OBJ=$(SRC:.cpp=.o)
-COMLIB=libmadmelia.so
-all:clean $(COMLIB)
-$(COMLIB):$(OBJ)
-	$(CXX) $(CFLAGES) $(INCDIR) -shared -o $(COMLIB) $^ $(LIBS)
+LIBMADMELIA=libmadmelia.so
+all:clean $(LIBMADMELIA)
+$(LIBMADMELIA):$(OBJ)
+	$(CXX) $(CFLAGES) $(INCDIR) -shared -o $(LIBMADMELIA) $^ $(LIBS)
 	@cp -f *.so ../lib
 %.o:%.cpp
 	$(CXX) $(CFLAGES) $(INCDIR) -c $< -o $@ $(LIBS) 
@@ -20,5 +20,5 @@ $(COMLIB):$(OBJ)
 clean:
 	@ rm -rf *.o	
 	@ rm -rf *.so
-	@ rm -f ../lib/$(COMLIB)
-	@ rm -f $(COMLIB)
+	@ rm -f ../lib/$(LIBMADMELIA)
+	@ rm -f $(LIBMADMELIA)

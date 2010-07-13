@@ -1,9 +1,9 @@
 CC=gcc
 CXX=g++
-CFLAGES= -g3 -Wno-deprecated
+CFLAGES=  -Wno-deprecated -fPIC
 INCDIR= -I../include/\
 	-I../include/common
-LIBS= 
+LIBS=-lpthread 
 SRC=$(shell ls *.cpp)
 OBJ=$(SRC:.cpp=.o)
 LIBOUTPUT=libcommon.so

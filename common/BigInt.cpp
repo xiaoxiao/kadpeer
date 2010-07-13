@@ -1,5 +1,5 @@
 #include "BigInt.h"
-
+#include <exception>
 
 // =================
 // Constants
@@ -1985,4 +1985,24 @@ std::ostream& operator<< (std::ostream& o_os, const BigInt::Rossi& i_ins)
 {
     return o_os << i_ins.toStrDec();
     //return o_os << i_ins.toStr0xHex();
+}
+
+int rossiLog( const BigInt::Rossi & bint)
+{
+    BigInt::Rossi tmp(bint);
+    try {
+	if ( tmp <= BigInt::Rossi( 0 ))
+	    throw std::exception();
+	int count=0;
+	while ( tmp > BigInt::Rossi( 0 ))
+	{
+	    tmp>>=1;
+	    count++;
+	}
+	return count-1;
+    }catch (...)
+    {
+	std::cerr<<"Log operator error"<<std::endl;
+	exit(1);
+    }
 }

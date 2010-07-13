@@ -404,7 +404,9 @@ struct BigInt
 	bool operator>  (const Rossi& i_arg) const;
 	bool operator<= (const Rossi& i_arg) const;
 	bool operator>= (const Rossi& i_arg) const;
-
+	
+	// --- Log fucntion
+	friend int rossiLog( const BigInt::Rossi & bint);
 	// --- Show functions ---
 	std::string toStrHex (const std::string& i_prefix = "") const;
 	std::string toStr0xHex () const;
