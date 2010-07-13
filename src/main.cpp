@@ -1,159 +1,199 @@
-/*
- *  shatest.cpp
- *
- *  Copyright (C) 1998, 2009
- *  Paul E. Jones <paulej@packetizer.com>
- *  All Rights Reserved
- *
- *****************************************************************************
- *  $Id: shatest.cpp 12 2009-06-22 19:34:25Z paulej $
- *****************************************************************************
- *
- *  Description:
- *      This file will exercise the SHA1 class and perform the three
- *      tests documented in FIPS PUB 180-1.
- *
- *  Portability Issues:
- *      None.
- *
- */
+//
+// arch-tag: 2dcf5618-b51f-4a04-9f3a-86ab829bc7d8
+//
 
-#include <iostream>
-#include "sha1.h"
+#include <stdlib.h>
+#include <cmath>
 
-using namespace std;
+#include "TThreadPool.hh"
+#include "TTimer.hh"
+#include "TRNG.hh"
 
-/*
- *  Define patterns for testing
- */
-#define TESTA   "abc"
-#define TESTB   "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+//
+// for some benchmarking
+//
 
-/*
- *  Function prototype
- */
-void DisplayMessageDigest(unsigned *message_digest);
+static int job_number = 0;
 
-/*  
- *  main
- *
- *  Description:
- *      This is the entry point for the program
- *
- *  Parameters:
- *      None.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *
- */
-int main()
+class TBenchJob : public TThreadPool::TJob
 {
-    SHA1        sha;
-    unsigned    message_digest[5];
-
-    /*
-     *  Perform test A
-     */
-    cout << endl << "Test A: 'abc'" << endl;
-
-    sha.Reset();
-    sha << TESTA;
-
-    if (!sha.Result(message_digest))
-    {
-        cerr << "ERROR-- could not compute message digest" << endl;
-    }
+protected:
+    int   _size;
     
+public:
+    TBenchJob ( int i, int s ) : TThreadPool::TJob( i ), _size(s) {}
+
+    virtual void run ( void * )
+    {
+        //std::cout << "  starting thread (" << job_number++ << "), size = " << _size << std::endl;
+        
+        double * _matrix = new double[ _size * _size ];
+        
+        for ( int i = 0; i < _size; i++ )
+        {
+            for ( int j = 0; j < _size; j++ )
+            {
+                _matrix[ (i*_size) + j ] = std::sin( double(j) * M_PI * std::cos( double(i) ));
+            }// for
+        }// for
+
+        delete _matrix;
+    }
+};
+
+#define MAX_SIZE  1000
+#define MAX_RAND  500
+
+void
+recursion ( int level, TRNG & rng )
+{
+    if ( level == 0 )
+    {
+        TBenchJob * job = new TBenchJob( -1, int(rng.rand( MAX_RAND )) + MAX_SIZE );
+
+        tp_run( job, NULL, true );
+    }// if
     else
     {
-        DisplayMessageDigest(message_digest);
-        cout << "Should match:" << endl;
-        cout << '\t' << "A9993E36 4706816A BA3E2571 7850C26C 9CD0D89D" << endl;
-	
-	
-    }
-    sha.Reset();
-    sha<<TESTA;
-    BigInt::Rossi digest;
-    if ( sha.Result(digest) )
-    {
-	cout<<digest.toStrHex()<<endl;
-	cout<<digest.toStrDec()<<endl;
-    }
-    /*
-     *  Perform test B
-     */
-    cout << endl << "Test B: " << TESTB << endl;
-
-    sha.Reset();
-    sha << TESTB;
-
-    if (!sha.Result(message_digest))
-    {
-        cerr << "ERROR-- could not compute message digest" << endl;
-    }
-    else
-    {
-        DisplayMessageDigest(message_digest);
-        cout << "Should match:" << endl;
-        cout << '\t' << "84983E44 1C3BD26E BAAE4AA1 F95129E5 E54670F1" << endl;
-    }
-
-    /*
-     *  Perform test C
-     */
-    cout << endl << "Test C: One million 'a' characters" << endl;
-
-    sha.Reset();
-    for(int i = 1; i <= 1000000; i++) sha.Input('a');
-
-    if (!sha.Result(message_digest))
-    {
-        cerr << "ERROR-- could not compute message digest" << endl;
-    }
-    else
-    {
-        DisplayMessageDigest(message_digest);
-        cout << "Should match:" << endl;
-        cout << '\t' << "34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F" << endl;
-    }
-
-    return 0;
+        recursion( level-1, rng );
+        recursion( level-1, rng );
+        recursion( level-1, rng );
+        recursion( level-1, rng );
+    }// else
 }
 
-/*  
- *  DisplayMessageDigest
- *
- *  Description:
- *      Display Message Digest array
- *
- *  Parameters:
- *      None.
- *
- *  Returns:
- *      Nothing.
- *
- *  Comments:
- *
- */
-void DisplayMessageDigest(unsigned *message_digest)
+void
+bench1 ( int argc, char ** argv )
 {
-    ios::fmtflags   flags;
+    TRNG  rng;
+    int   i = 1;
+    int   thr_count = 16;
+    int   rec_depth = 6;
+    
+    if ( argc > 1 ) thr_count = atoi( argv[1] );
+    if ( argc > 2 ) rec_depth = atoi( argv[2] );
 
-    cout << '\t';
+    for ( int j = 0; j < rec_depth; j++ )
+        i *= 4;
+    
+    tp_init( thr_count );
 
-    flags = cout.setf(ios::hex|ios::uppercase,ios::basefield);
-    cout.setf(ios::uppercase);
+    std::cout << "executing " << i << " jobs using " << thr_count << " thread(s)" << std::endl;
+    
+    TTimer  timer( REAL_TIME );
 
-    for(int i = 0; i < 5 ; i++)
+    timer.start();
+    
+    recursion( rec_depth, rng );
+    
+    tp_sync_all();
+
+    timer.stop();
+    std::cout << "time for recursion = " << timer << std::endl;
+}
+
+class TBench2Job : public TThreadPool::TJob
+{
+public:
+    TBench2Job ( int i ) : TThreadPool::TJob( i ) {}
+
+    virtual void run ( void * )
     {
-        cout << message_digest[i] << ' ';
+        // do nothing
+    }
+};
+
+class TBench2Thr : public TThread
+{
+public:
+    TBench2Thr ( int i ) : TThread( i ) {}
+
+    virtual void run ()
+    {
+        // do nothing
+    }
+};
+
+void
+bench2 ( int argc, char ** argv )
+{
+    int  max_jobs = 10000;
+
+    tp_init( 4 );
+
+    TTimer  timer( REAL_TIME );
+
+    timer.start();
+    
+    for ( int i = 0; i  < max_jobs; i++ )
+    {
+        TBench2Job  * job = new TBench2Job( i );
+        delete job;
     }
 
-    cout << endl;
+    timer.stop();
+    std::cout << "time to create jobs = " << timer << std::endl;
 
-    cout.setf(flags);
+    timer.start();
+    
+    for ( int i = 0; i  < max_jobs; i++ )
+    {
+        TBench2Thr  * job = new TBench2Thr( i );
+        delete job;
+    }
+
+    timer.stop();
+    std::cout << "time to create threads = " << timer << std::endl;
+
+    timer.start();
+    
+    for ( int i = 0; i  < max_jobs; i++ )
+    {
+        TBench2Job  * job = new TBench2Job( i );
+
+        tp_run( job );
+        tp_sync( job );
+
+        delete job;
+    }
+
+    timer.stop();
+    std::cout << "time for thread pool = " << timer << std::endl;
+
+    timer.start();
+    
+    for ( int i = 0; i  < max_jobs; i++ )
+    {
+        TBench2Thr  * job = new TBench2Thr( i );
+
+        job->create( false, false );
+        job->join();
+        
+        delete job;
+    }
+
+    timer.stop();
+
+    std::cout << "time for lwp-threads = " << timer << std::endl;
+    timer.start();
+    
+    for ( int i = 0; i  < max_jobs; i++ )
+    {
+        TBench2Thr  * job = new TBench2Thr( i );
+
+        job->create( false, true );
+        job->join();
+        
+        delete job;
+    }
+
+    timer.stop();
+    std::cout << "time for hwp-threads = " << timer << std::endl;
+}
+
+int
+main ( int argc, char ** argv )
+{
+    bench1( argc, argv );
+    // bench2( argc, argv );
 }
