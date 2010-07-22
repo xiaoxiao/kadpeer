@@ -1,44 +1,29 @@
 #ifndef __TTHREADPOOL_HH
 #define __TTHREADPOOL_HH
-//
-//  Project : ThreadPool
-//  File    : TThreadPool.hh
-//  Author  : Ronald Kriemann
-//  Purpose : class for managing a pool of threads
-//
-// arch-tag: 7b363e2f-5623-471f-b0dd-55d7ac55b93e
-//
 
 #include "sll.hh"
 #include "TThread.hh"
 typedef unsigned int uint;
 
-// no specific processor
+
 #define NO_PROC ((uint) -1)
 
-// forward decl. for internal class
+
 class TPoolThr;
 
-//
-// takes jobs and executes them in threads
-//
+
 class TThreadPool
 {
     friend class TPoolThr;
     
 public:
-    ///////////////////////////////////////////
-    //
-    // class for a job in the pool
-    //
 
     class TJob
     {
     protected:
-        // number of processor this job was assigned to
+
         const uint  _job_no;
 
-        // mutex for synchronisation
         TMutex     _sync_mutex;
         
     public:
@@ -118,12 +103,6 @@ protected:
     // insert idle thread into pool
     void append_idle ( TPoolThr * t );
 };
-
-///////////////////////////////////////////////////
-//
-// to access the global thread-pool
-//
-///////////////////////////////////////////////////
 
 // init global thread_pool
 void tp_init ( const uint p );

@@ -1,12 +1,3 @@
-//
-//  Project   : ThreadPool
-//  File      : TThread.cc
-//  Author    : Ronald Kriemann
-//  Purpose   : baseclass for a thread-able class
-//
-// arch-tag: aec71576-f8d5-4573-ad31-f3dbddc59934
-//
-
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
@@ -34,10 +25,6 @@ _run_thread ( void *arg )
     return NULL;
 }
 
-////////////////////////////////////////////
-//
-// constructor and destructor
-//
     
 TThread::TThread ( const int thread_no )
         : _running( false ), _thread_no(thread_no)
@@ -51,10 +38,6 @@ TThread::~TThread ()
         cancel();
 }
 
-////////////////////////////////////////////
-//
-// access local data
-//
 
 void
 TThread::set_thread_no ( const int n )
@@ -62,13 +45,6 @@ TThread::set_thread_no ( const int n )
     _thread_no = n;
 }
     
-////////////////////////////////////////////
-//
-// thread management
-//
-
-//
-// create thread (actually start it)
 //
 void 
 TThread::create ( const bool detached, const bool sscope )

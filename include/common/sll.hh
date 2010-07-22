@@ -1,13 +1,5 @@
 #ifndef __SLL_HH
 #define __SLL_HH
-//
-// Project : ThreadPool
-// File    : sll.hh
-// Purpose : Template class for a single concatenated list
-// Author  : Ronald Kriemann
-//
-// arch-tag: ec87ea39-c827-428a-8377-d68641f4c26a
-//
 
 #include <assert.h>
 

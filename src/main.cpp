@@ -1,7 +1,3 @@
-//
-// arch-tag: 2dcf5618-b51f-4a04-9f3a-86ab829bc7d8
-//
-
 #include <stdlib.h>
 #include <cmath>
 
@@ -9,9 +5,6 @@
 #include "TTimer.hh"
 #include "TRNG.hh"
 
-//
-// for some benchmarking
-//
 
 static int job_number = 0;
 
@@ -41,7 +34,7 @@ public:
     }
 };
 
-#define MAX_SIZE  1000
+#define MAX_SIZE  500
 #define MAX_RAND  500
 
 void
@@ -194,6 +187,6 @@ bench2 ( int argc, char ** argv )
 int
 main ( int argc, char ** argv )
 {
-    bench1( argc, argv );
-    // bench2( argc, argv );
+    //bench1( argc, argv );
+    bench2( argc, argv );
 }
