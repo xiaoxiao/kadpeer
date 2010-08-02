@@ -1,6 +1,6 @@
 CC=gcc
 CXX=g++
-CFLAGES= -Wno-deprecated -fPIC
+CFLAGES= -g -Wno-deprecated -fPIC
 INCDIR= -I../include/\
 	-I../include/common
 LIBS=-lpthread 

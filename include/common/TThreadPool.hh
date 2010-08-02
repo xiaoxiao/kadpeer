@@ -92,10 +92,6 @@ public:
     void  sync_all ();
 
 protected:
-    ///////////////////////////////////////////////
-    //
-    // manage pool threads
-    //
 
     // return idle thread form pool
     TPoolThr * get_idle ();

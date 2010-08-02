@@ -50,41 +50,27 @@ bool SHA1::Result(unsigned *message_digest_array)
 
     return true;
 }
-#include<iostream>
-#include<sstream>
 #include<exception>
-using namespace std;
+
 bool SHA1::Result( BigInt::Rossi  &bint)
 {
-    unsigned int digest[5];
-    std::stringstream tmp;
-    //string tmp;
-    //ostream os;
+    unsigned int digest[5]={0};
     try{
 	if ( ! Result(digest) )
 	{
-	    throw exception();
+	    throw std::exception();
 	}
     }catch(...)
     {
-	cerr<<"Result error"<<endl;
-	return 0;
+	std::cerr<<"Result error"<<std::endl;
+	return false;
     }
-    ios::fmtflags  flags = cout.setf(ios::hex|ios::uppercase,ios::basefield);
-    tmp.setf(ios::uppercase);
-    tmp.setf(flags);
-    for(int i = 0; i < 5 ; i++)
+    bint=BigInt::Rossi(digest[0]);
+    for( int i = 1 ; i < 5 ; i++)
     {
-	//stringstream s;
-	tmp<<digest[i];
-	cout<<tmp<<endl;
-	//s>>tmp;
+	bint<<=32;
+	bint += BigInt::Rossi(digest[i]);
     }
-//    tmp.setf(flags);
-    string ret;
-    tmp>>ret;
-    const string out=ret;
-    bint=BigInt::Rossi(out,16);
     return true;
 }
 

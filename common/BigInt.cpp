@@ -1230,7 +1230,7 @@ BigInt::Rossi BigInt::Rossi::operator<< (std::size_t i_shift)
 
     ret.resizeUnits (m_units.size() + 1);
 
-    ASSERTION ((ret.getUnitsSize() + 1) == tmp.getUnitsSize());
+    ASSERTION ((ret.getUnitsSize() +1 ) == tmp.getUnitsSize());
 
     for (std::size_t i = 0; i < i_shift; i++)
     {

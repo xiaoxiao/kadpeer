@@ -1,8 +1,8 @@
 CC=gcc
 CXX=g++
-CFLAGES=-g3 -Wno-deprecated 
+CFLAGES= -g -Wno-deprecated 
 INCDIR=-I../include\
- 	-I../include/common
+	-I../include/common
 LIBS=-L../lib -lcommon -lpthread
 SRC=$(shell ls *.cpp)
 OBJ=$(SRC:.cpp=.o)

@@ -1,130 +1,105 @@
 #include <pthread.h>
 #include "TThreadPool.hh"
-//
+
 #define THR_SEQUENTIAL  0
 
-
 TThreadPool * thread_pool = NULL;
-
 
 class TPoolThr : public TThread
 {
 protected:
-    // pool we are in
+   
     TThreadPool       * _pool;
     
-    // job to run and data for it
+   
     TThreadPool::TJob * _job;
     void              * _data_ptr;
 
-    // should the job be deleted upon completion
+   
     bool                _del_job;
     
-    // condition for job-waiting
+   
     TCondition          _work_cond;
     
-    // indicates end-of-thread
+   
     bool                _end;
 
-    // mutex for preventing premature deletion
+   
     TMutex              _del_mutex;
     
 public:
-    //
-    // constructor
-    //
+   
     TPoolThr ( const int n, TThreadPool * p )
-            : TThread(n), _pool(p), _job(NULL), _data_ptr(NULL), _del_job(false), _end(false)
-    {}
+	: TThread(n), _pool(p), _job(NULL), _data_ptr(NULL), _del_job(false), _end(false)
+	{}
     
     ~TPoolThr () {}
-    
-    //
-    // parallel running method
-    //
+      
     void run ()
-    {
-        _del_mutex.lock();
+	{
+	    _del_mutex.lock();
 
-        while ( ! _end )
-        {
-            //
-            // append thread to idle-list and wait for work
-            //
+	    while ( ! _end )
+	    {
+   
+		_pool->append_idle( this );
 
-            _pool->append_idle( this );
-
-            _work_cond.lock();
+		_work_cond.lock();
             
-            while (( _job == NULL ) && ! _end )
-                _work_cond.wait();
+		while (( _job == NULL ) && ! _end )
+		    _work_cond.wait();
 
-            _work_cond.unlock();
+		_work_cond.unlock();
         
-            //
-            // look if we really have a job to do
-            // and handle it
-            //
-
-            if ( _job != NULL )
-            {
-                // execute job
-                _job->run( _data_ptr );
-                _job->unlock();
+		if ( _job != NULL )
+		{
+		    _job->run( _data_ptr );
+		    _job->unlock();
             
-                if ( _del_job )
-                    delete _job;
+		    if ( _del_job )
+			delete _job;
 
-                // reset data
-                _work_cond.lock();
-                _job      = NULL;
-                _data_ptr = NULL;
-                _work_cond.unlock();
-            }// if
-        }// while
+		    _work_cond.lock();
+		    _job      = NULL;
+		    _data_ptr = NULL;
+		    _work_cond.unlock();
+		}
+	    }
 
-        _del_mutex.unlock();
-    }
+	    _del_mutex.unlock();
+	}
 
-    //
-    // set and run job with optional data
-    //
+   
     void run_job  ( TThreadPool::TJob * j, void * p, const bool del = false )
-    {
-        _work_cond.lock();
+	{
+	    _work_cond.lock();
         
-        _job      = j;
-        _data_ptr = p;
-        _del_job  = del;
+	    _job      = j;
+	    _data_ptr = p;
+	    _del_job  = del;
         
-        _work_cond.signal();
-        _work_cond.unlock();
-    }
+	    _work_cond.signal();
+	    _work_cond.unlock();
+	}
 
-    //
-    // give access to delete mutex
-    //
-    
+       
     TMutex & del_mutex  ()
-    {
-        return _del_mutex;
-    }
+	{
+	    return _del_mutex;
+	}
 
-    //
-    // quit thread (reset data and wake up)
-    //
-    
+       
     void quit ()
-    {
-        _work_cond.lock();
+	{
+	    _work_cond.lock();
         
-        _end      = true;
-        _job      = NULL;
-        _data_ptr = NULL;
+	    _end      = true;
+	    _job      = NULL;
+	    _data_ptr = NULL;
         
-        _work_cond.signal();
-        _work_cond.unlock();
-    }
+	    _work_cond.signal();
+	    _work_cond.unlock();
+	}
 };
     
 
@@ -140,7 +115,7 @@ TThreadPool::TThreadPool ( const uint max_p )
     {
         _max_parallel = 0;
         std::cerr << "(TThreadPool) TThreadPool : could not allocate thread array" << std::endl;
-    }// if
+    }
     
     for ( uint i = 0; i < _max_parallel; i++ )
     {
@@ -150,7 +125,7 @@ TThreadPool::TThreadPool ( const uint max_p )
             std::cerr << "(TThreadPool) TThreadPool : could not allocate thread" << std::endl;
         else
             _threads[i]->create( true, true );
-    }// for
+    }
 
     // tell the scheduling system, how many threads to expect
     // (commented out since not needed on most systems)
@@ -178,10 +153,6 @@ TThreadPool::~TThreadPool ()
     delete[] _threads;
 }
 
-///////////////////////////////////////////////
-//
-// run, stop and synch with job
-//
 
 void
 TThreadPool::run ( TThreadPool::TJob * job, void * ptr, const bool del )
@@ -190,9 +161,6 @@ TThreadPool::run ( TThreadPool::TJob * job, void * ptr, const bool del )
         return;
 
 #if THR_SEQUENTIAL == 1
-    //
-    // run in calling thread
-    //
     
     job->run( ptr );
 
@@ -200,23 +168,16 @@ TThreadPool::run ( TThreadPool::TJob * job, void * ptr, const bool del )
         delete job;
     
 #else
-    //
-    // run in parallel thread
-    //
 
     TPoolThr * thr = get_idle();
-    
-    // lock job for synchronisation
+
     job->lock();
 
-    // attach job to thread
     thr->run_job( job, ptr, del );
 #endif
 }
 
-//
-// wait until <job> was executed
-//
+
 void
 TThreadPool::sync ( TJob * job )
 {
@@ -227,9 +188,7 @@ TThreadPool::sync ( TJob * job )
     job->unlock();
 }
 
-//
-// wait until all jobs have been executed
-//
+
 void
 TThreadPool::sync_all ()
 {
@@ -237,45 +196,30 @@ TThreadPool::sync_all ()
     {
         _idle_cond.lock();
         
-        // wait until next thread becomes idle
         if ( _idle_threads.size() < _max_parallel )
             _idle_cond.wait();
         else
         {
             _idle_cond.unlock();
             break;
-        }// else
+        }
 
         _idle_cond.unlock();
-    }// while
+    }
 }
 
-///////////////////////////////////////////////
-//
-// manage pool threads
-//
-
-//
-// return idle thread form pool
 //
 TPoolThr *
 TThreadPool::get_idle ()
 {
     while ( true )
     {
-        //
-        // wait for an idle thread
-        //
 
         _idle_cond.lock();
         
         while ( _idle_threads.size() == 0 )
             _idle_cond.wait();
-
-        //
-        // get first idle thread
-        //
-        
+             
         if ( _idle_threads.size() > 0 )
         {
             TPoolThr * t = _idle_threads.behead();
@@ -283,21 +227,16 @@ TThreadPool::get_idle ()
             _idle_cond.unlock();
             
             return t;
-        }// if
+        }
 
         _idle_cond.unlock();
-    }// while
+    }
 }
 
-//
-// append recently finished thread to idle list
-//
+
 void
 TThreadPool::append_idle ( TPoolThr * t )
 {
-    //
-    // CONSISTENCY CHECK: if given thread is already in list
-    //
     
     _idle_cond.lock();
 
@@ -307,26 +246,17 @@ TThreadPool::append_idle ( TPoolThr * t )
         {
             _idle_cond.unlock();
             return;
-        }// if
-    }// while
+        }
+    }
     
     _idle_threads.push_back( t );
 
-    // wake a blocked thread for job execution
     _idle_cond.signal();
 
     _idle_cond.unlock();
 }
 
-///////////////////////////////////////////////////
-//
-// to access global thread-pool
-//
-///////////////////////////////////////////////////
 
-//
-// init global thread_pool
-//
 void
 tp_init ( const uint p )
 {
@@ -337,9 +267,7 @@ tp_init ( const uint p )
         std::cerr << "(init_thread_pool) could not allocate thread pool" << std::endl;
 }
 
-//
-// run job
-//
+
 void
 tp_run ( TThreadPool::TJob * job, void * ptr, const bool del )
 {
@@ -349,30 +277,23 @@ tp_run ( TThreadPool::TJob * job, void * ptr, const bool del )
     thread_pool->run( job, ptr, del );
 }
 
-//
-// synchronise with specific job
-//
+
 void
 tp_sync ( TThreadPool::TJob * job )
 {
     thread_pool->sync( job );
 }
 
-//
-// synchronise with all jobs
-//
+
 void
 tp_sync_all ()
 {
     thread_pool->sync_all();
 }
 
-//
-// finish thread pool
-//
+
 void
 tp_done ()
 {
     delete thread_pool;
 }
-
