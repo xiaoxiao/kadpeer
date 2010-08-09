@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <iostream>
 
+
 Socket::Socket() :
     m_sock ( -1 )
 {
@@ -14,6 +15,13 @@ Socket::Socket() :
 	     sizeof ( m_addr ) );
 
 }
+
+Socket::Socket(const Socket & sock)
+{
+    this->m_sock = sock.m_sock;
+    this->m_addr = sock.m_addr;
+}
+
 
 Socket::~Socket()
 {
